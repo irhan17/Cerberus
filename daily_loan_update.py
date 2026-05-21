@@ -98,7 +98,19 @@ mail = outlook.CreateItem(0)
 date_string = datetime.now().strftime("%#m/%#d")
 mail.Subject = f"{date_string} Daily Loan News Update"
 mail.To = "consult-iiftikar@cerberus.com; mwaldenberg@cerberus.com"
-mail.Body = f"{len(df)} new articles found in past 24 hours.\n\nSee attached file (attached only if new articles were found)."
+
+#Puts table from Excel file in a table within the email
+if not df.empty:
+    df_html = df.copy()
+    df_html["Link"] = df_html["Link"].apply(lambda x: f'<a href="{x}">Open Article</a>' if pd.notnull(x) else "")
+    html_table = df_html.to_html(escape=False, index=False)
+else:
+    html_table = "<p>No new articles found.</p>"
+mail.HTMLBody = f"""
+<p>{len(df)} new articles found in past 24 hours. See attached file (attached only if new articles were found).</p>
+{html_table}"""
+
+#Sends email
 if os.path.exists(output_path):
     mail.Attachments.Add(os.path.abspath(output_path))
 mail.Send()
